@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for, request, session
 from flask_sqlalchemy import SQLAlchemy 
 from flask_migrate import Migrate
 from flask_wtf import FlaskForm
@@ -49,6 +49,9 @@ class Workout_log(db.Model):
 	workout_id = db.Column(db.Integer, db.ForeignKey('workout.workout_id'))
 	log_date = db.Column(db.DateTime)
 
+	workout = db.relationship('Workout', backref='logs')
+	log_details = db.relationship('Log_details', backref='workout_log', lazy='dynamic')
+
 class Log_details(db.Model):
 	detail_id = db.Column(db.Integer, primary_key=True)
 	log_id = db.Column(db.Integer, db.ForeignKey('workout_log.log_id'))
@@ -56,6 +59,8 @@ class Log_details(db.Model):
 	sets = db.Column(db.Integer)
 	weight = db.Column(db.Integer)
 	repetitions = db.Column(db.Integer)
+
+	exercise = db.relationship('Exercises')
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -81,9 +86,12 @@ class AddWorkoutForm(FlaskForm):
 	exercises = FieldList(FormField(ExerciseForm), min_entries=1)
 
 class ExerciseDetails(FlaskForm):
+	exercise_id = IntegerField('Exercise ID')
 	sets = IntegerField('Sets', validators=[InputRequired('Sets performed is required')])
 	weight = IntegerField('Weight', validators=[InputRequired('Weight is required')])
 	reps = IntegerField('Reps', validators=[InputRequired('Reps performed is required')])
+	class Meta:
+		csrf = False
 
 class WorkoutDetails(FlaskForm):
 	exercises = FieldList(FormField(ExerciseDetails), min_entries=1) 
@@ -124,6 +132,9 @@ def entries():
 	user_id = current_user.user_id
 	workouts = Workout.query.filter_by(user_id=user_id).all()
 
+	card_log = db.session.query(Workout_log).filter_by(user_id=user_id).order_by(Workout_log.log_date.desc()).all()
+
+
 	selected_workout = None
 	if request.method == 'POST':
 		workout_id = request.form.get('workoutSelect')
@@ -135,16 +146,27 @@ def entries():
 				exercise_form = ExerciseDetails()
 				form.exercises.append_entry(exercise_form)
 
-	return render_template('entries.html', current_user=current_user, workouts=workouts, selected_workout=selected_workout, form=form)
+	return render_template('entries.html', current_user=current_user, workouts=workouts, 
+											selected_workout=selected_workout, form=form, card_log=card_log)
 
 @app.route('/log_Workout', methods=['POST'])
 def log_Workout():
 	form = WorkoutDetails()
 
 	if form.validate_on_submit():
-		return redirect(url_for('entries'))
+		workout_log = Workout_log(user_id=current_user.user_id, workout_id=request.form.get('workoutSelect'),log_date=datetime.now())
+		db.session.add(workout_log)
+		db.session.commit()
 
-	return "fuck"
+		for exercise_details in form.exercises:
+			log_details = Log_details(log_id=workout_log.log_id, exercise_id=exercise_details.exercise_id.data, 
+										sets=exercise_details.sets.data, weight=exercise_details.weight.data, 
+										repetitions=exercise_details.reps.data)
+			db.session.add(log_details)
+		db.session.commit()
+
+		return redirect(url_for('entries'))
+	return render_template('entries.html', form=form)
 
 @app.route('/logout')
 @login_required 
@@ -185,7 +207,19 @@ def submit_Workout():
 @app.route('/analyze')
 @login_required
 def analyze():
-	return render_template('analyze.html')
+
+	user_id = current_user.user_id
+	workout_exercise = db.session.query(Workout).filter_by(user_id=user_id).all()
+
+	
+
+
+
+
+
+
+	return render_template('analyze.html', workout_exercise=workout_exercise)
+
 
 @app.route('/register', methods=['GET', 'POST']) 
 def register():

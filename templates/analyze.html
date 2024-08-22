@@ -57,18 +57,22 @@
 
         <div class="small-middle-container text-white pt-5">
             <h5>Display options</h5> 
-            <div class="d-flex align-items-center pt-1">
-                <select class="form-select me-2" aria-label="Select menu example">
-                    <option selected>Overall</option>
-                    <option value="1">Push</option>
-                    <option value="2">Pull</option>
-                    <option value="3">Legs</option>
-                </select> 
+            <form method="POST" action="{{ url_for('analyze') }}">
+                <div class="d-flex align-items-center pt-1">
+                    <select name="exercise_id" class="form-select me-2" aria-label="Select menu example">
+                        {% for workoutExercise in workout_exercise %}
+                            <option value="{{ workoutExercise.workout_id }}">{{ workoutExercise.workout_name }}</option>
+                            {% for exercise in workoutExercise.exercises %}
+                                <option value="{{ exercise.exercise_id }}">  -{{ exercise.exercise_name }}</option>
+                            {% endfor %}
+                        {% endfor %}
+                    </select> 
 
-                <button type="button" class="btn btn-primary">
-                View
-                </button>
-            </div>
+                    <button type="button" class="btn btn-primary">
+                    View
+                    </button>
+                </div>
+            </form>
         </div>
 
                     

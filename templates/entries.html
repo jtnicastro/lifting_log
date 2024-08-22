@@ -51,67 +51,19 @@
                         <option value={{ workout.workout_id }}>{{ workout.workout_name }}</option>
                       {% endfor %}
                     </select>
-                    <label for="workoutSelect" class="form-label">Select workout:</label>
+                    <label for="workout" class="form-label">Select workout:</label>
                 </div>
-                <button type="submit" class="btn btn-danger btn-lg mt-3 mb-5">Select</button>
+                <button type="submit" class="btn btn-danger btn-lg mt-3 mb-3">Select</button>
               </form>  
         </div>
-        <div class="small-middle-container pt-5">
-            <div class="card bg-light text-dark text-center">
-                <div class="card-header">
-                     <h5>Push</h5>
-
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Exercise</th>
-                                    <th scope="col">Sets</th>
-                                    <th scope="col">Weight (lbs.)</th>
-                                    <th scope="col">Reps</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <th scope="row">Incline Bench Press</th>
-                                    <td>3</td>
-                                    <td>135</td>
-                                    <td>8</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Barbell Military Press</th>
-                                    <td>3</td>
-                                    <td>95</td>
-                                    <td>10</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Dumbbell Lateral Raise</th>
-                                    <td>4</td>
-                                    <td>15</td>
-                                    <td>15</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Dumbbell Skull Crushers</th>
-                                    <td>4</td>
-                                    <td>30</td>
-                                    <td>12</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card-footer text-muted">8/13/2024</div>
-            </div>
+        <div class="small-middle-container pt-4 pb-4">
+          {% for log in card_log %}
             <div class="card bg-light text-dark text-center mt-5">
                 <div class="card-header">
-                     <h5>Pull</h5>
+                     <h5>{{ log.workout.workout_name }}</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-
-                        <!-- Card table -->
                         <table class="table">
                             <thead>
                                 <tr>
@@ -122,37 +74,21 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                {% for detail in log.log_details %}
                                 <tr>
-                                    <th scope="row">Neutral Grip Pull Ups</th>
-                                    <td>3</td>
-                                    <td>135</td>
-                                    <td>8</td>
+                                    <th scope="row">{{ detail.exercise.exercise_name }}</th>
+                                    <td>{{ detail.sets }}</td>
+                                    <td>{{ detail.weight }}</td>
+                                    <td>{{ detail.repetitions }}</td>
                                 </tr>
-                                <tr>
-                                    <th scope="row">Pendlay Rows</th>
-                                    <td>3</td>
-                                    <td>95</td>
-                                    <td>10</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Dumbbell Rear Delt Flies</th>
-                                    <td>4</td>
-                                    <td>15</td>
-                                    <td>15</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">Dumbbell Bicep Curls</th>
-                                    <td>4</td>
-                                    <td>30</td>
-                                    <td>12</td>
-                                </tr>
+                                {% endfor %}
                             </tbody>
                         </table>
-                        <!-- Card table end -->
                     </div>
                 </div>
-                <div class="card-footer text-muted">8/14/2024</div>
+                <div class="card-footer text-muted">{{ log.log_date.strftime("%m/%d/%Y") }}</div>
             </div>
+          {% endfor %}
         </div>
 
         {% if selected_workout %}
@@ -167,25 +103,27 @@
                     </div>
                     <!-- Modal body -->
                     <form method="POST" action="{{ url_for('log_Workout') }}">
+                      {{ form.csrf_token }}
                       <div class="modal-body">
-                              {% for exercise, exercise_form in zip(selected_workout.exercises, form.exercises) %}
+                              {% for exercise, exercise_detail in zip(selected_workout.exercises, form.exercises) %}
                               <div class="row pt-2">
                                   <div class="col-3 pt-2">
                                       <p>{{ exercise.exercise_name }}:</p>
+                                      <input type="hidden" name="workoutSelect" value="{{ selected_workout.workout_id }}">
+                                      {{ exercise_detail.exercise_id(class="form-control", type="hidden", value=exercise.exercise_id) }}
                                   </div>
-
-                                  <label for="sets_{{ loop.index }}" class="col-1 col-form-label m-0">Sets</label>
+                                  <label for="sets{{ loop.index }}" class="col-1 col-form-label m-0">Sets</label>
                                   <div class="col-1 p-0">
-                                      {{ exercise_form.sets(class="form-control") }}
+                                      {{ exercise_detail.sets(id="sets" ~ loop.index, class="form-control") }}
                                   </div>
-                                  <label for="weight_{{ loop.index }}" class="col-1 col-form-label ms-5 me-1 m-0">Weight</label>
+                                  <label for="weight{{ loop.index }}" class="col-1 col-form-label ms-5 me-1 m-0">Weight</label>
                                   <div class="col-1 p-0">
-                                      {{ exercise_form.weight(class="form-control") }}
+                                      {{ exercise_detail.weight(id="weight" ~ loop.index, class="form-control") }}
                                   </div>
-                                  <label for="weight_{{ loop.index }}" class="col-1 col-form-label me-1">Lbs.</label>
-                                  <label for="reps_{{ loop.index }}" class="col-1 col-form-label m-0">Reps</label>
+                                  <label for="weight{{ loop.index }}" class="col-1 col-form-label me-1">Lbs.</label>
+                                  <label for="reps{{ loop.index }}" class="col-1 col-form-label m-0">Reps</label>
                                   <div class="col-1 p-0">
-                                      {{ exercise_form.reps(class="form-control") }}
+                                      {{ exercise_detail.reps(id="reps" ~ loop.index, class="form-control") }}
                                   </div>
                               </div>
                               {% endfor %}
