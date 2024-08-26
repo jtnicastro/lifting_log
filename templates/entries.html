@@ -1,61 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-    
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Lifting Log | Entries</title>
-        <!-- Bootstrap core CSS -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-        <!-- Custom styles for this template -->
-        <link href="{{ url_for('static', filename='theme.css') }}" rel="stylesheet">
-    </head>
-    
-    <body class="bg-dark">
-        <div class="container p-5 text-white text-center">
-             <h1>Lifting Log</h1>
+{% extends "base.html" %}
+{% block title %}Entries{% endblock %}
+{% block entries_active %}active{% endblock %}
+{% block content %}
 
-            <p class="h6">Keep track of your workout regiment</p>
-        </div>
-        
-        <!-- Navigation bar -->
-        <nav class="navbar navbar-expand-sm bg-secondary navbar-dark">
-            <div class="container-fluid"> 
-              <span class="navbar-brand"><b>Lifting Log</b> .....<small> Hello <i>{{ current_user.username }}</i></small></span>
-
-                <ul class="navbar-nav">
-                    <li class="nav-item"> <a class="nav-link active" href="{{ url_for('entries') }}">Entries</a>
-
-                    </li>
-                    <li class="nav-item"> <a class="nav-link" href="{{ url_for('addExercise') }}">Add Workout</a>
-
-                    </li>
-                    <li class="nav-item"> <a class="nav-link" href="{{ url_for('analyze') }}">Analyze</a>
-
-                    </li>
-                    <li class="nav-item"> <a class="nav-link" href="{{ url_for('logout') }}">Sign Out</a>
-
-                    </li>
-                </ul>
-            </div>
-        </nav>
-
+        <!-- Section for adding a new workout entry -->
         <div class="small-middle-container text-white pt-5">
             <h2> Add Entry </h2> 
+            <!-- Form for selecting a workout from existing workouts -->
               <form method = "POST" action="{{ url_for('entries') }}">
                 <div class="form-floating">
                     <select class="form-select form-select-lg" id="workout" name="workoutSelect">
+                    <!-- Loop through available workouts and create options -->
                       {% for workout in workouts %}
                         <option value={{ workout.workout_id }}>{{ workout.workout_name }}</option>
                       {% endfor %}
                     </select>
                     <label for="workout" class="form-label">Select workout:</label>
                 </div>
+                <!-- Submit button to select the workout -->
                 <button type="submit" class="btn btn-danger btn-lg mt-3 mb-3">Select</button>
               </form>  
         </div>
+
+        <!-- Section for displaying logs of previous workout entries -->
         <div class="small-middle-container pt-4 pb-4">
           {% for log in card_log %}
             <div class="card bg-light text-dark text-center mt-5">
@@ -64,6 +31,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
+                        <!-- Table to show exercise details within the workout log -->
                         <table class="table">
                             <thead>
                                 <tr>
@@ -74,6 +42,7 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                <!-- Loop through details of each exercise in the log -->
                                 {% for detail in log.log_details %}
                                 <tr>
                                     <th scope="row">{{ detail.exercise.exercise_name }}</th>
@@ -86,13 +55,14 @@
                         </table>
                     </div>
                 </div>
+                 <!-- Footer showing the date of the workout log -->
                 <div class="card-footer text-muted">{{ log.log_date.strftime("%m/%d/%Y") }}</div>
             </div>
           {% endfor %}
         </div>
 
         {% if selected_workout %}
-        <!-- Modal header -->
+        <!-- Modal for adding details to the selected workout -->
         <div class="modal show" id="Select" style="display: block;" aria-modal="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
@@ -101,10 +71,11 @@
                         <h4 class="modal-title">{{ selected_workout.workout_name }}</h4>
                         <a href="{{ url_for('entries') }}" class="btn-close"></a>
                     </div>
-                    <!-- Modal body -->
+                    <!-- Modal body containing a form to log details for each exercise in the workout -->
                     <form method="POST" action="{{ url_for('log_Workout') }}">
                       {{ form.csrf_token }}
                       <div class="modal-body">
+                            <!-- Loop through each exercise in the selected workout to log details -->
                               {% for exercise, exercise_detail in zip(selected_workout.exercises, form.exercises) %}
                               <div class="row pt-2">
                                   <div class="col-3 pt-2">
@@ -128,11 +99,8 @@
                               </div>
                               {% endfor %}
                       </div>
-                      <!-- Modal footer -->
+                      <!-- Modal footer with a button to submit the workout details -->
                       <div class="modal-footer">
-                          <!--
-                          <a href="{{ url_for('entries') }}" class="btn btn-danger" role="submit">Add</a>
-                        -->
                           <button type="submit" class="btn btn-danger">Add</button>
                       </div>
                   </form>
@@ -140,5 +108,4 @@
             </div>
         </div>
         {% endif %}
-    </body>
-</html>
+{% endblock %}
