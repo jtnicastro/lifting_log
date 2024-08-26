@@ -84,6 +84,9 @@ Ensure you have the following installed on your local development environment:
 * Use the "Analyze" page to visualize your progress over different time ranges using interactive charts.
 
 ## Screenshots
+![add_workout](https://github.com/jtnicastro/lifting_log/blob/master/screenshots/add_workout.JPG)
+![entries](https://github.com/jtnicastro/lifting_log/blob/master/screenshots/entries.JPG)
+![analyze](https://github.com/jtnicastro/lifting_log/blob/master/screenshots/analyze.JPG) 
 
 ## Project Structure
 ```bash
@@ -95,7 +98,7 @@ Ensure you have the following installed on your local development environment:
     ├── views.py          # View functions
     ├── templates/        # HTML templates
     │   ├── base.html
-    |   ├── alt_base.html
+    │   ├── alt_base.html
     │   ├── home.html
     │   ├── addExercise.html
     │   ├── entries.html
@@ -103,6 +106,7 @@ Ensure you have the following installed on your local development environment:
     │   └── register.html
     ├── static/           # Static files (CSS, JS, Images)
     │   └── theme.css
+    ├── requirements.txt  # Requirements file
     └── README.md         # This README file 
 ```
 ## Technologies Used
