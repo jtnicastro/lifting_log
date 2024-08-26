@@ -6,7 +6,7 @@ from wtforms import StringField, EmailField, PasswordField, BooleanField, Intege
 from wtforms.validators import InputRequired, Length 
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
-from datetime import datetime
+from datetime import datetime, timedelta
 import jinja2 
 
 app = Flask(__name__)
@@ -204,21 +204,78 @@ def submit_Workout():
 
 	return 'Something went wrong'
 
-@app.route('/analyze')
+@app.route('/analyze', methods=['GET', 'POST'])
 @login_required
 def analyze():
 
 	user_id = current_user.user_id
+	selected_name = ''
+	time_range = request.form.get('time_range', '30')
+	item_id = request.form.get('item_id', None)
+	chart_data = []
+
+
+	def workout_volumeLoad(log):
+		volume = sum(amount.sets*amount.weight*amount.repetitions for amount in log.log_details)
+		return volume 
+
+	def workout_timeFilter(time_range):
+		chart_data = []
+		if time_range == 'all':
+			all_logs = Workout_log.query.filter_by(workout_id=item_id).all()
+			start_date = all_logs[0].log_date if all_logs else datetime.now()
+		else:
+			time = int(time_range)
+			end_time = datetime.now()
+			start_time = end_time - timedelta(days=time)
+			all_logs = db.session.query(Workout_log).filter(Workout_log.workout_id==item_id, Workout_log.log_date.between(start_time, end_time)).all()
+
+		for log in all_logs:
+			formatted_date = log.log_date.strftime('%Y-%m-%d') 
+			volume = workout_volumeLoad(log)
+			chart_data.append({'x': formatted_date, 'y': volume})
+
+		return chart_data
+
+	def exercise_timeFilter(time_range):
+		chart_data = []
+		if time_range == 'all':
+			all_logs = Log_details.query.filter_by(exercise_id=item_id).all()
+			start_date = all_logs[0].workout_log.log_date if all_logs else datetime.now()
+		else:
+			time = int(time_range)
+			end_time = datetime.now()
+			start_time = end_time - timedelta(days=time)
+			all_logs = db.session.query(Log_details).filter(Log_details.exercise_id==item_id, Log_details.workout_log.has(Workout_log.log_date.between(start_time, end_time))).all()
+
+		for log in all_logs:
+			formatted_date = log.workout_log.log_date.strftime('%Y-%m-%d')
+			volume = log.sets * log.weight * log.repetitions
+			chart_data.append({'x': formatted_date, 'y': volume})
+
+		return chart_data
+
 	workout_exercise = db.session.query(Workout).filter_by(user_id=user_id).all()
 
-	
+	if request.method == 'POST' and item_id: 
+		item_type, item_id = item_id.split('_')
+		item_id = int(item_id)
+
+		if item_type == 'workout':
+			selected_workout = Workout.query.filter_by(workout_id=item_id).first()
+			selected_name = selected_workout.workout_name
+
+			chart_data = workout_timeFilter(time_range)
+
+		elif item_type == 'exercise':
+			selected_exercise = Exercises.query.filter_by(exercise_id=item_id).first()
+			selected_name = selected_exercise.exercise_name 
+				
+			chart_data = exercise_timeFilter(time_range) 
 
 
-
-
-
-
-	return render_template('analyze.html', workout_exercise=workout_exercise)
+	return render_template('analyze.html', workout_exercise=workout_exercise, chart_data=chart_data, 
+							selected_name=selected_name, time_range=time_range, item_id=item_id)
 
 
 @app.route('/register', methods=['GET', 'POST']) 
